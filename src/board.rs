@@ -75,11 +75,21 @@ impl Board {
         steps.map(|i| if self[i].is_empty() { 0 } else { 1 }).sum()
     }
 
-    pub fn can_move(&self, start: i32, end: i32, jump: bool) -> bool {
+    fn can_move(&self, start: i32, end: i32, jump: bool) -> bool {
         let min_distance = if jump {2} else {1};
         let is_free = self[end].is_empty();
         let enough_distance = (start - end).abs() % 8 >= min_distance;
         let piece_count_ok = self.count_pieces(start, end - start) == min_distance;
         is_free && enough_distance && piece_count_ok
+    }
+
+    pub fn allowed_moves(&self, start: i32, jump: bool, player: Colour) -> Vec<i32> {
+        if !self[start].has_colour(player) {
+            Vec::new()
+        } else {
+            let range = self[start].min_step(start/8, jump)..=self[start].max_step(start/8, jump);
+            let ends = range.flat_map(|dy| [start + dy*7, start + dy*9]);
+            Vec::from_iter(ends.filter(|end| self.can_move(start, *end, jump)))
+        }
     }
 }

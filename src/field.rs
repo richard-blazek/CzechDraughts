@@ -38,7 +38,7 @@ impl std::fmt::Display for Field {
 }
 
 impl Field {
-    pub fn is_queen(&self) -> bool {
+    fn is_queen(&self) -> bool {
         matches!(self, Field::Piece(Role::Queen, _))
     }
 
@@ -73,11 +73,11 @@ impl Field {
         }
     }
 
-    pub fn min_dy(&self, jump: bool) -> i32 {
-        if self.is_queen() { -7 } else if jump { 2 * self.direction() } else { self.direction() }
+    pub fn min_step(&self, row: i32, jump: bool) -> i32 {
+        if self.is_queen() { -7 } else if jump { 2 * self.direction() } else { self.direction() }.clamp(-row, 7-row)
     }
 
-    pub fn max_dy(&self, jump: bool) -> i32 {
-        if self.is_queen() { 7 } else if jump { 2 * self.direction() } else { self.direction() }
+    pub fn max_step(&self, row: i32, jump: bool) -> i32 {
+        if self.is_queen() { 7 } else if jump { 2 * self.direction() } else { self.direction() }.clamp(-row, 7-row)
     }
 }

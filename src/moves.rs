@@ -1,19 +1,19 @@
 use crate::field::*;
 use crate::board::*;
 
-fn possible(board: &Board, player: Colour, start: i32, jump: bool) -> impl Iterator<Item = (i32, Board)> + '_ {
-    let min_dy = board[start].min_dy(jump).clamp(-start/8, 7);
-    let max_dy = board[start].max_dy(jump).clamp(-7, 7 - start / 8);
+fn possible(board: &Board, player: Colour, start: i32, jump: bool) -> (Vec<Board>, Vec<(i32, Board)>) {
+    let ends = board.allowed_moves(start, jump, player);
+    let next = Vec::from_iter(ends.iter().map(|end| (*end, board.move_piece(start, *end))));
 
-    let range = if board[start].has_colour(player) { min_dy..(max_dy+1) } else { 0..0 };
-
-    let ends = range.flat_map(move |dy| [start + dy * 7, start + dy * 9]);
-    let valid = ends.filter(move |end| board.can_move(start, *end, jump));
-    valid.map(move |end| (end, board.move_piece(start, end)))
+    if next.is_empty() {
+        (vec![*board], Vec::new())
+    } else {
+        (Vec::new(), next)
+    }
 }
 
 fn nonjumps_from(board: &Board, player: Colour, start: i32) -> Vec<Board> {
-    Vec::from_iter(possible(board, player, start, false).map(|(_, board)| board))
+    Vec::from_iter(possible(board, player, start, false).1.iter().map(|(_, board)| *board))
 }
 
 fn jumps_from(board: &Board, player: Colour, start: i32) -> Vec<Board> {
@@ -21,9 +21,10 @@ fn jumps_from(board: &Board, player: Colour, start: i32) -> Vec<Board> {
     let mut states = vec![(start, board.clone())];
 
     while !states.is_empty() {
-        let moves = Vec::from_iter(states.iter().flat_map(|(end, board)| possible(board, player, *end, true)));
-        result.extend(moves.iter().map(|(_, board)| board));
-        states = moves;
+        let (halt, next): (Vec<Vec<Board>>, Vec<Vec<(i32, Board)>>) = states.iter().map(|(end, board)| possible(board, player, *end, true)).unzip();
+
+        states = next.concat();
+        result.append(&mut halt.concat());
     }
     result
 }
