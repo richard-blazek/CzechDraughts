@@ -5,11 +5,7 @@ fn possible(board: &Board, player: Colour, start: i32, jump: bool) -> impl Itera
     let min_dy = board[start].min_dy(jump).clamp(-start/8, 7);
     let max_dy = board[start].max_dy(jump).clamp(-7, 7 - start / 8);
 
-    let range = if matches!(board[start], Field::Piece(_, colour) if colour == player) {
-        min_dy..(max_dy+1)
-    } else {
-        0..0
-    };
+    let range = if board[start].has_colour(player) { min_dy..(max_dy+1) } else { 0..0 };
 
     let ends = range.flat_map(move |dy| [start + dy * 7, start + dy * 9]);
     let valid = ends.filter(move |end| board.can_move(start, *end, jump));

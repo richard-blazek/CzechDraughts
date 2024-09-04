@@ -42,16 +42,16 @@ impl Field {
         matches!(self, Field::Piece(Role::Queen, _))
     }
 
-    pub fn is_pawn(&self) -> bool {
-        matches!(self, Field::Piece(Role::Pawn, _))
-    }
-
     pub fn is_white(&self) -> bool {
         matches!(self, Field::Piece(_, Colour::White))
     }
 
     pub fn is_black(&self) -> bool {
         matches!(self, Field::Piece(_, Colour::Black))
+    }
+
+    pub fn has_colour(&self, colour: Colour) {
+        matches!(self, Field::Piece(_, other) if colour == other)
     }
 
     pub fn is_empty(&self) -> bool {
