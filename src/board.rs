@@ -43,7 +43,7 @@ impl Board {
         ])
     }
 
-    pub fn promote_all(mut self) -> Board {
+    fn promote_all(&mut self) {
         for i in 0..8 {
             if self.0[i].is_white() {
                 self.0[i] = self.0[i].promoted();
@@ -52,7 +52,6 @@ impl Board {
                 self.0[63 - i] = self.0[63 - i].promoted();
             }
         }
-        self
     }
 
     fn fields_between(start: i32, end: i32) -> impl Iterator<Item = i32> {
@@ -67,6 +66,7 @@ impl Board {
             self.0[i as usize] = Field::Empty
         }
         self.0[end as usize] = piece;
+        self.promote_all();
         self
     }
 

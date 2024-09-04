@@ -13,7 +13,7 @@ fn possible(board: &Board, player: Colour, start: i32, jump: bool) -> impl Itera
 
     let ends = range.flat_map(move |dy| [start + dy * 7, start + dy * 9]);
     let valid = ends.filter(move |end| board.can_move(start, *end, jump));
-    valid.map(move |end| (end, board.move_piece(start, end).promote_all()))
+    valid.map(move |end| (end, board.move_piece(start, end)))
 }
 
 fn nonjumps_from(board: &Board, player: Colour, start: i32) -> Vec<Board> {
