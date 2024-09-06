@@ -58,7 +58,7 @@ end Field
 
 class Board(fields: Array[Field]):
     override def toString =
-        0.until(8).map(row => "|" + 0.until(8).map(col => fields[row*8+col].toString).join("|") + "|").join("\n")
+        0.until(8).map(row => 0.until(8).map(col => fields(row*8+col).toString).mkString("|", "|", "|")).mkString("\n")
 
     private def promoted =
         Board(fields.zipWithIndex.map {
@@ -133,3 +133,6 @@ object Moves:
         lazy val walks = 0.until(64).flatMap(walksFrom(board, player, _)).toArray
         if jumps.length > 0 then jumps else walks
 end Moves
+
+@main def czechdraughts() =
+    println("Hello, world")
