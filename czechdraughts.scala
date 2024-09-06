@@ -50,6 +50,11 @@ enum Field:
         case Piece(_, Color.White) => -1
         case Piece(_, Color.Black) => 1
 
+    def valueFor(player: Color) = this match
+        case Empty => 0
+        case Piece(Role.Queen, color) => if color == player then 4 else -4
+        case Piece(Role.Pawn, color) => if color == player then 1 else -1
+
     private def pawnStep(jump: Boolean) = if jump then 2 * direction else direction
     private def clamp(row: Int, step: Int) = if step > 7-row then 7-row else if step < -row then -row else step
     def minStep(row: Int, jump: Boolean) = clamp(row, if isQueen then -7 else pawnStep(jump))
@@ -92,6 +97,30 @@ class Board(fields: Array[Field]):
             val max = fields(start).maxStep(start/8, jump)
             val ends = min.to(max).flatMap(dy => Array(start + dy*7, start + dy*9))
             ends.filter(canMove(start, _, jump)).toArray
+
+    private def possible(player: Color, start: Int, jump: Boolean) =
+        moves(start, jump, player).map(end => (move(start, end), end))
+
+    private def walksFrom(player: Color, start: Int) =
+        possible(player, start, false).map(_(0))
+
+    private def jumpsFrom(player: Color, start: Int, first: Boolean = true): Array[Board] =
+        val next = possible(player, start, true)
+        if next.length > 0 then
+            next.flatMap(x => x(0).jumpsFrom(player, x(1), false))
+        else if !first then
+            Array(this)
+        else
+            Array[Board]()
+
+    def moves(player: Color) =
+        lazy val jumps = 0.until(64).flatMap(jumpsFrom(player, _)).toArray
+        lazy val walks = 0.until(64).flatMap(walksFrom(player, _)).toArray
+        if jumps.length > 0 then jumps else walks
+
+    def value(player: Color) =
+        fields.map(f => f.valueFor(player)).sum()
+
 end Board
 
 object Board:
@@ -112,27 +141,35 @@ object Board:
         ))
 end Board
 
-object Moves:
-    private def possible(board: Board, player: Color, start: Int, jump: Boolean) =
-        board.moves(start, jump, player).map(end => (board.move(start, end), end))
+object Minimax:
+    private val infinity = 1 << 30;
 
-    private def walksFrom(board: Board, player: Color, start: Int) =
-        possible(board, player, start, false).map(_(0))
-
-    private def jumpsFrom(board: Board, player: Color, start: Int, first: Boolean = true): Array[Board] =
-        val next = possible(board, player, start, true)
-        if next.length > 0 then
-            next.flatMap(x => jumpsFrom(x(0), player, x(1), false))
-        else if !first then
-            Array(board)
+    def valueOf(board: Board, player: Color, depth: Int) =
+        if depth <= 0 then
+            board.value(player)
         else
-            Array[Board]()
+            board.moves(player).map(b => -valueOf(b, player.invert, depth-1)).maxOption.getOrElse(infinity)
 
-    def all(board: Board, player: Color) =
-        lazy val jumps = 0.until(64).flatMap(jumpsFrom(board, player, _)).toArray
-        lazy val walks = 0.until(64).flatMap(walksFrom(board, player, _)).toArray
-        if jumps.length > 0 then jumps else walks
-end Moves
+    def move(board: Board, player: Color, depth: Int) =
+        board.moves(player).maxByOption(b => -valueOf(b, player.invert, depth-1)).getOrElse(null)
+end Minimax
 
 @main def czechdraughts() =
-    println("Hello, world")
+    var board = Board.empty
+    var player = Color.White
+
+    while
+        board != null
+    do
+        println("Board: ")
+        println(board)
+        println("Score for white: ", board.valueFor(Color.White))
+        println("Score for black: ", board.valueFor(Color.Black))
+        println("Playing: ", player)
+
+        board = Minimax.move(board, player, 2)
+        player = player.invert
+
+        println("\n\n")
+
+    println("The end!")
