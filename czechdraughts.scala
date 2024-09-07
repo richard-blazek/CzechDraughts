@@ -85,9 +85,12 @@ class Board(fields: Array[Field]):
     private def count(start: Int, end: Int) =
         path(start, end).filter(i => !fields(i).isEmpty).length
 
-    private def canMove(start: Int, end: Int, jump: Boolean) =
-        val minDistance = if jump then 2 else 1
-        fields(end).isEmpty && distance(start, end) >= minDistance && count(start, end) == minDistance
+    private def canMove(start: Int, end: Int, jump: Boolean, player: Color) =
+        lazy val endOk = end >= 0 && end < 64 && end != start && fields(end).isEmpty
+        lazy val noOverflow = distance(start, end) == math.abs(start/8 - end/8)
+        lazy val noFriendlyFire = path(start, end).count(i => fields(i).hasColor(player)) == 1
+        lazy val takePieceOk = path(start, end).count(i => fields(i).hasColor(player.invert)) == (if jump then 1 else 0)
+        endOk && noOverflow && noFriendlyFire && takePieceOk
 
     def possibleFrom(start: Int, jump: Boolean, player: Color) =
         if !fields(start).hasColor(player) then
@@ -96,16 +99,16 @@ class Board(fields: Array[Field]):
             val min = fields(start).minStep(start/8, jump)
             val max = fields(start).maxStep(start/8, jump)
             val ends = min.to(max).flatMap(dy => Array(start + dy*7, start + dy*9))
-            ends.filter(canMove(start, _, jump)).toArray
+            ends.filter(canMove(start, _, jump, player)).toArray
 
     private def movesFrom(player: Color, start: Int, jump: Boolean) =
         possibleFrom(start, jump, player).map(end => (move(start, end), end))
 
     private def walksFrom(player: Color, start: Int) =
-        possible(player, start, false).map(_(0))
+        movesFrom(player, start, false).map(_(0))
 
     private def jumpsFrom(player: Color, start: Int, first: Boolean = true): Array[Board] =
-        val next = possible(player, start, true)
+        val next = movesFrom(player, start, true)
         if next.length > 0 then
             next.flatMap(x => x(0).jumpsFrom(player, x(1), false))
         else if !first then
@@ -170,6 +173,6 @@ end Minimax
         board = Minimax.move(board, player, 2)
         player = player.invert
 
-        println("\n\n")
+        scala.io.StdIn.readLine()
 
     println("The end!")
