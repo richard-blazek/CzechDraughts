@@ -50,13 +50,13 @@ enum Field:
         case Piece(_, Color.White) => -1
         case Piece(_, Color.Black) => 1
 
-    def valueFor(player: Color) = this match
+    def value(player: Color) = this match
         case Empty => 0
         case Piece(Role.Queen, color) => if color == player then 4 else -4
         case Piece(Role.Pawn, color) => if color == player then 1 else -1
 
     private def pawnStep(jump: Boolean) = if jump then 2 * direction else direction
-    private def clamp(row: Int, step: Int) = if step > 7-row then 7-row else if step < -row then -row else step
+    private def clamp(row: Int, step: Int) = (0 max (step+row) min 7) - row
     def minStep(row: Int, jump: Boolean) = clamp(row, if isQueen then -7 else pawnStep(jump))
     def maxStep(row: Int, jump: Boolean) = clamp(row, if isQueen then  7 else pawnStep(jump))
 end Field
@@ -89,7 +89,7 @@ class Board(fields: Array[Field]):
         val minDistance = if jump then 2 else 1
         fields(end).isEmpty && distance(start, end) >= minDistance && count(start, end) == minDistance
 
-    def moves(start: Int, jump: Boolean, player: Color) =
+    def possibleFrom(start: Int, jump: Boolean, player: Color) =
         if !fields(start).hasColor(player) then
             Array[Int]()
         else
@@ -98,8 +98,8 @@ class Board(fields: Array[Field]):
             val ends = min.to(max).flatMap(dy => Array(start + dy*7, start + dy*9))
             ends.filter(canMove(start, _, jump)).toArray
 
-    private def possible(player: Color, start: Int, jump: Boolean) =
-        moves(start, jump, player).map(end => (move(start, end), end))
+    private def movesFrom(player: Color, start: Int, jump: Boolean) =
+        possibleFrom(start, jump, player).map(end => (move(start, end), end))
 
     private def walksFrom(player: Color, start: Int) =
         possible(player, start, false).map(_(0))
@@ -119,7 +119,7 @@ class Board(fields: Array[Field]):
         if jumps.length > 0 then jumps else walks
 
     def value(player: Color) =
-        fields.map(f => f.valueFor(player)).sum()
+        fields.map(f => f.value(player)).sum()
 
 end Board
 
@@ -144,7 +144,7 @@ end Board
 object Minimax:
     private val infinity = 1 << 30;
 
-    def valueOf(board: Board, player: Color, depth: Int) =
+    def valueOf(board: Board, player: Color, depth: Int): Int =
         if depth <= 0 then
             board.value(player)
         else
@@ -155,7 +155,7 @@ object Minimax:
 end Minimax
 
 @main def czechdraughts() =
-    var board = Board.empty
+    var board = Board.empty()
     var player = Color.White
 
     while
@@ -163,9 +163,9 @@ end Minimax
     do
         println("Board: ")
         println(board)
-        println("Score for white: ", board.valueFor(Color.White))
-        println("Score for black: ", board.valueFor(Color.Black))
-        println("Playing: ", player)
+        println("Score for white: " + board.value(Color.White))
+        println("Score for black: " + board.value(Color.Black))
+        println("Playing: " + player)
 
         board = Minimax.move(board, player, 2)
         player = player.invert
