@@ -23,7 +23,7 @@ enum Field:
         case Piece(Role.Queen, Color.Black) => "B"
         case Piece(Role.Pawn, Color.Black) => "b"
 
-    private def isQueen = this match
+    def isQueen = this match
         case Piece(Role.Queen, _) => true
         case _ => false
 
@@ -54,11 +54,6 @@ enum Field:
         case Empty => 0
         case Piece(Role.Queen, color) => if color == player then 4 else -4
         case Piece(Role.Pawn, color) => if color == player then 1 else -1
-
-    private def pawnStep(jump: Boolean) = if jump then 2 * direction else direction
-    private def clamp(row: Int, step: Int) = (0 max (step+row) min 7) - row
-    def minStep(row: Int, jump: Boolean) = clamp(row, if isQueen then -7 else pawnStep(jump))
-    def maxStep(row: Int, jump: Boolean) = clamp(row, if isQueen then  7 else pawnStep(jump))
 end Field
 
 class Board(fields: Array[Field]):
@@ -82,24 +77,33 @@ class Board(fields: Array[Field]):
             case (f, i) => if i == end then fields(start) else if steps.contains(i) then Field.Empty else f
         }).promoted
 
-    private def count(start: Int, end: Int) =
-        path(start, end).filter(i => !fields(i).isEmpty).length
+    private def count(start: Int, end: Int, color: Color) =
+        path(start, end).count(i => fields(i).hasColor(color))
 
-    private def canMove(start: Int, end: Int, jump: Boolean, player: Color) =
-        lazy val endOk = end >= 0 && end < 64 && end != start && fields(end).isEmpty
-        lazy val noOverflow = distance(start, end) == math.abs(start/8 - end/8)
-        lazy val noFriendlyFire = path(start, end).count(i => fields(i).hasColor(player)) == 1
-        lazy val takePieceOk = path(start, end).count(i => fields(i).hasColor(player.invert)) == (if jump then 1 else 0)
-        endOk && noOverflow && noFriendlyFire && takePieceOk
+    private def isValidEnd(end: Int) =
+        end >= 0 && end < 64 && fields(end).isEmpty
+
+    private def isPathFree(start: Int, end: Int, jump: Boolean, player: Color) =
+        fields(end).isEmpty
+            && count(start, end, player) == 1
+            && count(start, end, player.invert) == (if jump then 1 else 0)
 
     def possibleFrom(start: Int, jump: Boolean, player: Color) =
         if !fields(start).hasColor(player) then
             Array[Int]()
         else
-            val min = fields(start).minStep(start/8, jump)
-            val max = fields(start).maxStep(start/8, jump)
-            val ends = min.to(max).flatMap(dy => Array(start + dy*7, start + dy*9))
-            ends.filter(canMove(start, _, jump, player)).toArray
+            val ends =
+                if fields(start).isQueen then
+                    (-7).to(7)
+                        .filter(dy => math.abs(dy) < (if jump then 2 else 1))
+                        .flatMap(dy => Array(start + dy*7, start + dy*9))
+                        .toArray
+                else 
+                    Array(1, -1)
+                        .map(d => start + (8 * fields(start).direction + d) * (if jump then 2 else 1))
+
+            ends.filter(end => isValidEnd(end) && isPathFree(start, end, jump, player))
+                .filter(end => math.abs(end/8 - start/8) == math.abs(end%8 - start%8))
 
     private def movesFrom(player: Color, start: Int, jump: Boolean) =
         possibleFrom(start, jump, player).map(end => (move(start, end), end))
