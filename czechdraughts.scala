@@ -66,7 +66,7 @@ class Board(fields: Array[Field]):
         })
 
     private def distance(start: Int, end: Int) =
-        math.abs(end - start) % 8
+        math.abs(end%8 - start%8)
 
     private def path(start: Int, end: Int) =
         start.to(end).by((end - start) / distance(start, end))
@@ -78,7 +78,7 @@ class Board(fields: Array[Field]):
         }).promoted
 
     private def count(start: Int, end: Int, color: Color) =
-        path(start, end).count(i => fields(i).hasColor(color))
+        path(start, end).count(fields(_).hasColor(color))
 
     private def isValidEnd(end: Int) =
         end >= 0 && end < 64 && fields(end).isEmpty
