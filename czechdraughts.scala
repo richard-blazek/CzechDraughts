@@ -169,16 +169,26 @@ def input(prompt: String) =
 
 def play(board: Board, player: Color, human: Color): Unit =
     println(board)
-    println("Playing: " + player)
-    input("...")
 
-    Minimax.move(board, player, 4) match
+    val next =
+        if human == player then
+            val move = input("Input the desired move: ")
+            val start = (move(0)-'1') * 8 + (move(1)-'A')
+            assert(move(2) == ',')
+            val end = (move(3)-'1') * 8 + (move(4)-'A')
+            board.move(start, end)
+        else
+            println("Computer playing for " + player)
+            Minimax.move(board, player, 4)
+
+    println("\n")
+    next match
         case null => println(if player == Color.Black then "White won!" else "Black won!")
-        case next => play(next, player.invert, human)
+        case _ => play(next, player.invert, human)
 
 @main def czechdraughts() =
-    val human = input("Which player do you want to play: ") match
-        case "White" => Color.White
-        case "Black" => Color.Black
+    val human = input("Which player do you want to play for [w/b]? ") match
+        case "w" => Color.White
+        case "b" => Color.Black
 
     play(Board.empty(), Color.White, human)
