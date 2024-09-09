@@ -162,23 +162,32 @@ def input(prompt: String) =
     print(prompt)
     scala.io.StdIn.readLine()
 
+def applyMoves(board: Board, moves: Array[(Int, Int)]): Board =
+    if moves.length == 0 then
+        board
+    else
+        applyMoves(board.move(moves(0)(0), moves(0)(1)), moves.slice(1, moves.length))
+
+def inputMove(prompt: String): Array[(Int, Int)] =
+    var steps = input(prompt).split(' ').map(xy => (xy(0)-'A') + 8 * (xy(1)-'1'))
+    if steps.length < 2 then
+        inputMove(prompt)
+    else
+        0.until(steps.length-1).map(i => (steps(i), steps(i+1))).toArray
+
 def play(board: Board, player: Color, human: Color): Unit =
     println(board)
 
     val next =
         if human == player then
-            val move = input("Input the desired move: ")
-            val start = (move(0)-'1') * 8 + (move(1).toUpper-'A')
-            assert(move(2) == ',')
-            val end = (move(3)-'1') * 8 + (move(4).toUpper-'A')
-            board.move(start, end)
+            applyMoves(board, inputMove("Input the desired move: "))
         else
-            println("Computer playing for " + player)
+            println("Computer playing for " + player + "...")
             Minimax.move(board, player, 6)
 
     println("\n")
     next match
-        case null => println(if player == Color.Black then "White won!" else "Black won!")
+        case null => println("%s won!".format(player.invert))
         case _ => play(next, player.invert, human)
 
 @main def czechdraughts() =
