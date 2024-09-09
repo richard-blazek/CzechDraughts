@@ -151,7 +151,7 @@ end Board
 object Minimax:
     private val infinity = 1 << 30;
 
-    def valueOf(board: Board, player: Color, depth: Int): Int =
+    private def valueOf(board: Board, player: Color, depth: Int): Int =
         if depth <= 0 then
             board.value(player)
         else
@@ -161,19 +161,14 @@ object Minimax:
         board.moves(player).maxByOption(b => -valueOf(b, player.invert, depth-1)).getOrElse(null)
 end Minimax
 
+def play(board: Board, player: Color): Unit =
+    println(board)
+    println("Playing: " + player)
+    scala.io.StdIn.readLine()
+
+    Minimax.move(board, player, 4) match
+        case null => println(if player == Color.Black then "White won!" else "Black won!")
+        case next => play(next, player.invert)
+
 @main def czechdraughts() =
-    var board = Board.empty()
-    var player = Color.White
-
-    while
-        board != null
-    do
-        println(board)
-        println("Playing: " + player)
-
-        board = Minimax.move(board, player, 4)
-        player = player.invert
-
-        scala.io.StdIn.readLine()
-
-    println(if player == Color.White then "White won!" else "Black won!")
+    play(Board.empty(), Color.White)
