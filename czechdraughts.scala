@@ -91,21 +91,19 @@ class Board(fields: Array[Field]):
             && count(start, end, player.invert) == (if jump then 1 else 0)
 
     def possibleFrom(start: Int, jump: Boolean, player: Color) =
-        if !fields(start).hasColor(player) then
-            Array[Int]()
-        else
-            val ends =
-                if fields(start).isQueen then
-                    (-7).to(7)
-                        .filter(dy => math.abs(dy) >= (if jump then 2 else 1))
-                        .flatMap(dy => Array(start + dy*7, start + dy*9))
-                        .toArray
-                else 
-                    Array(1, -1)
-                        .map(d => start + (8 * fields(start).direction + d) * (if jump then 2 else 1))
+        val ends =
+            if !fields(start).hasColor(player) then
+                Array[Int]()
+            else if fields(start).isQueen then
+                (-7).to(7)
+                    .filter(dy => math.abs(dy) >= (if jump then 2 else 1))
+                    .flatMap(dy => Array(start + dy*7, start + dy*9)).toArray
+            else
+                Array(-1, 1)
+                    .map(d => start + (8 * fields(start).direction + d) * (if jump then 2 else 1))
 
-            ends.filter(end => isValidEnd(end) && isPathFree(start, end, jump, player))
-                .filter(end => math.abs(end/8 - start/8) == math.abs(end%8 - start%8))
+        ends.filter(end => isValidEnd(end) && isPathFree(start, end, jump, player))
+            .filter(end => math.abs(end/8 - start/8) == math.abs(end%8 - start%8))
 
     private def movesFrom(player: Color, start: Int, jump: Boolean) =
         possibleFrom(start, jump, player).map(end => (move(start, end), end))
@@ -171,15 +169,15 @@ def play(board: Board, player: Color, human: Color): Unit =
     println(board)
 
     val next =
-        if human == player then
+        if human == player && false then
             val move = input("Input the desired move: ")
-            val start = (move(0)-'1') * 8 + (move(1)-'A')
+            val start = (move(0)-'1') * 8 + (move(1).toUpper-'A')
             assert(move(2) == ',')
-            val end = (move(3)-'1') * 8 + (move(4)-'A')
+            val end = (move(3)-'1') * 8 + (move(4).toUpper-'A')
             board.move(start, end)
         else
             println("Computer playing for " + player)
-            Minimax.move(board, player, 4)
+            Minimax.move(board, player, 8)
 
     println("\n")
     next match
