@@ -58,7 +58,9 @@ end Field
 
 class Board(fields: Array[Field]):
     override def toString =
-        0.until(8).map(row => 0.until(8).map(col => fields(row*8+col).toString).mkString("|", "|", "|")).mkString("\n")
+        val header = "   " + 0.until(8).map(i => ('A' + i).toChar).mkString(" ")
+        val content = 0.until(8).map(row => "%d |%s|".format(row+1, fields.slice(row*8, (row+1)*8).mkString("|"))).mkString("\n")
+        header + "\n" + content
 
     private def promoted =
         Board(fields.zipWithIndex.map {
@@ -161,14 +163,22 @@ object Minimax:
         board.moves(player).maxByOption(b => -valueOf(b, player.invert, depth-1)).getOrElse(null)
 end Minimax
 
-def play(board: Board, player: Color): Unit =
+def input(prompt: String) =
+    print(prompt)
+    scala.io.StdIn.readLine()
+
+def play(board: Board, player: Color, human: Color): Unit =
     println(board)
     println("Playing: " + player)
-    scala.io.StdIn.readLine()
+    input("...")
 
     Minimax.move(board, player, 4) match
         case null => println(if player == Color.Black then "White won!" else "Black won!")
-        case next => play(next, player.invert)
+        case next => play(next, player.invert, human)
 
 @main def czechdraughts() =
-    play(Board.empty(), Color.White)
+    val human = input("Which player do you want to play: ") match
+        case "White" => Color.White
+        case "Black" => Color.Black
+
+    play(Board.empty(), Color.White, human)
