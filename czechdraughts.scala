@@ -105,16 +105,13 @@ class Board(fields: Array[Field]):
         ends.filter(end => isValidEnd(end) && isPathFree(start, end, jump, player))
             .filter(end => math.abs(end/8 - start/8) == math.abs(end%8 - start%8))
 
-    private def movesFrom(player: Color, start: Int, jump: Boolean) =
-        possibleFrom(start, jump, player).map(end => (move(start, end), end))
-
     private def walksFrom(player: Color, start: Int) =
-        movesFrom(player, start, false).map(_(0))
+        possibleFrom(start, false, player).map(move(start, _))
 
     private def jumpsFrom(player: Color, start: Int, first: Boolean = true): Array[Board] =
-        val next = movesFrom(player, start, true)
+        val next = possibleFrom(start, true, player)
         if next.length > 0 then
-            next.flatMap(x => x(0).jumpsFrom(player, x(1), false))
+            next.flatMap(end => move(start, end).jumpsFrom(player, end, false))
         else if !first then
             Array(this)
         else
@@ -169,7 +166,7 @@ def play(board: Board, player: Color, human: Color): Unit =
     println(board)
 
     val next =
-        if human == player && false then
+        if human == player then
             val move = input("Input the desired move: ")
             val start = (move(0)-'1') * 8 + (move(1).toUpper-'A')
             assert(move(2) == ',')
@@ -177,7 +174,7 @@ def play(board: Board, player: Color, human: Color): Unit =
             board.move(start, end)
         else
             println("Computer playing for " + player)
-            Minimax.move(board, player, 8)
+            Minimax.move(board, player, 6)
 
     println("\n")
     next match
