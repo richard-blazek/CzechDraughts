@@ -95,7 +95,7 @@ class Board(fields: Array[Field]):
             val ends =
                 if fields(start).isQueen then
                     (-7).to(7)
-                        .filter(dy => math.abs(dy) < (if jump then 2 else 1))
+                        .filter(dy => math.abs(dy) >= (if jump then 2 else 1))
                         .flatMap(dy => Array(start + dy*7, start + dy*9))
                         .toArray
                 else 
@@ -168,15 +168,12 @@ end Minimax
     while
         board != null
     do
-        println("Board: ")
         println(board)
-        println("Score for white: " + board.value(Color.White))
-        println("Score for black: " + board.value(Color.Black))
         println("Playing: " + player)
 
-        board = Minimax.move(board, player, 2)
+        board = Minimax.move(board, player, 4)
         player = player.invert
 
         scala.io.StdIn.readLine()
 
-    println("The end!")
+    println(if player == Color.White then "White won!" else "Black won!")
